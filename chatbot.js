@@ -114,8 +114,13 @@ client.on('message', async (msg) => {
 
 
 
-try {
-    client.initialize();
-} catch (error) {
-    console.log("WhatsApp Web no pudo inicializarse:", error.message);
+
+
+// Si estás en producción (Railway), evitamos que intente abrir el navegador sin librerías
+if (process.env.NODE_ENV !== 'production') {
+    client.initialize().catch(err => {
+        console.log("No se pudo iniciar WhatsApp Web localmente:", err.message);
+    });
+} else {
+    console.log("WhatsApp Web desactivado en Railway para mantener la API online.");
 }
