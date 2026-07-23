@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miguel Angel Cardozo Cisneros | Boutique Jurídica</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tu archivo de estilos externo -->
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans">
+
+    <!-- Navbar -->
+    <nav class="bg-slate-900 p-6 flex justify-between items-center sticky top-0 z-50 shadow-lg">
+        <div class="text-amber-600 font-serif text-xl tracking-widest">LOGO</div>
+        <div class="flex gap-8">
+            <a href="#inicio" class="text-white uppercase tracking-widest text-sm hover:text-amber-600 transition">Quién soy</a>
+            <a href="#registro" class="text-white uppercase tracking-widest text-sm hover:text-amber-600 transition">Registro</a>
+            <a href="#contacto" class="text-white uppercase tracking-widest text-sm hover:text-amber-600 transition">Contáctanos</a>
+        </div>
+        <div class="text-white font-serif tracking-wider">CARDOZO CISNEROS</div>
+    </nav>
+
+    <!-- Botón Alargado de WhatsApp -->
+    <a href="https://wa.me/573116765208" target="_blank" class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full shadow-2xl z-[60] flex items-center gap-2 transition-transform hover:scale-105 font-semibold text-sm">
+        <span>Agendar cita por WhatsApp</span>
+    </a>
+
+    <!-- Header Principal -->
+    <header id="inicio" class="py-20 flex flex-col items-center text-center px-4">
+        <div class="w-48 h-48 rounded-full border-4 border-amber-600 overflow-hidden mb-6 shadow-xl">
+            <!-- Asegúrate de tener tu imagen en una carpeta o usa una URL directa -->
+            <img src="https://via.placeholder.com/400" alt="Miguel Angel Cardozo Cisneros" class="w-full h-full object-cover">
+        </div>
+        <h2 class="text-lg font-serif mb-12 text-slate-600 tracking-[0.2em]">MIGUEL ANGEL CARDOZO CISNEROS</h2>
+        <h1 class="font-serif text-4xl md:text-6xl max-w-4xl mb-6 leading-tight">
+            LA LIBERTAD, LA JUSTICIA Y EL DEBIDO PROCESO SON NUESTRA PRIORIDAD
+        </h1>
+    </header>
+
+    <!-- Especialidades -->
+    <section id="registro" class="container mx-auto px-6 py-16">
+        <h2 class="text-center font-serif text-3xl mb-12 uppercase tracking-widest">Áreas de Práctica</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="border border-slate-200 p-8 rounded-lg bg-white hover:shadow-xl transition">
+                <div class="mb-4 text-4xl">⚖️</div>
+                <h3 class="font-bold text-slate-900 uppercase mb-3">Derecho Penal</h3>
+                <p class="text-sm text-slate-600">Defensa técnica especializada y representación estratégica en procesos penales.</p>
+            </div>
+            <div class="border border-slate-200 p-8 rounded-lg bg-white hover:shadow-xl transition">
+                <div class="mb-4 text-4xl">👨‍👩‍👧‍👦</div>
+                <h3 class="font-bold text-slate-900 uppercase mb-3">Derecho de Familia</h3>
+                <p class="text-sm text-slate-600">Asesoría integral en asuntos de familia, custodia, alimentos y sucesiones.</p>
+            </div>
+            <div class="border border-slate-200 p-8 rounded-lg bg-white hover:shadow-xl transition">
+                <div class="mb-4 text-4xl">💼</div>
+                <h3 class="font-bold text-slate-900 uppercase mb-3">Derecho Comercial</h3>
+                <p class="text-sm text-slate-600">Acompañamiento legal en contratos, sociedades y litigios comerciales.</p>
+            </div>
+            <div class="border border-slate-200 p-8 rounded-lg bg-white hover:shadow-xl transition">
+                <div class="mb-4 text-4xl">🏗️</div>
+                <h3 class="font-bold text-slate-900 uppercase mb-3">Derecho Laboral</h3>
+                <p class="text-sm text-slate-600">Defensa de derechos laborales, liquidaciones y seguridad social.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contacto -->
+    <section id="contacto" class="bg-slate-900 text-white py-16 mt-12">
+        <div class="container mx-auto px-6 grid md:grid-cols-2 gap-12">
+            <div>
+                <h2 class="text-2xl font-serif text-amber-600 mb-6 uppercase">Contáctanos</h2>
+                <form class="flex flex-col gap-4">
+                    <input type="text" placeholder="Nombre completo" class="p-3 rounded bg-slate-800 text-white border-none w-full">
+                    <input type="email" placeholder="Correo electrónico" class="p-3 rounded bg-slate-800 text-white border-none w-full">
+                    <textarea placeholder="Descripción de su caso" rows="4" class="p-3 rounded bg-slate-800 text-white border-none w-full"></textarea>
+                    <button class="bg-amber-600 text-white font-bold py-3 rounded hover:bg-amber-700 transition">ENVIAR CONSULTA</button>
+                </form>
+            </div>
+            <div class="flex flex-col justify-center gap-4">
+                <h2 class="text-2xl font-serif text-amber-600 uppercase">Información</h2>
+                <p class="text-lg">Cra. 3 #11-32 - Of. 334<br>Edificio Zacourt - Cali, Colombia</p>
+                <p class="font-bold">Tel: 311 676 5208</p>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

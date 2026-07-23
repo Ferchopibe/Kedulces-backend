@@ -1,0 +1,15 @@
+2026/07/21-15:25:04.264 63f8 Reusing MANIFEST C:\Kedulces-backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/07/21-15:25:04.266 63f8 Recovering log #218
+2026/07/21-15:25:04.378 63f8 Reusing old log C:\Kedulces-backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000218.log 
+2026/07/21-15:25:11.524 56f4 Level-0 table #228: started
+2026/07/21-15:25:11.558 56f4 Level-0 table #228: 1413517 bytes OK
+2026/07/21-15:25:11.562 56f4 Delete type=0 #218
+2026/07/21-15:25:11.771 56f4 Compacting 1@1 + 7@2 files
+2026/07/21-15:25:11.859 56f4 Generated table #229@1: 74927 keys, 2292418 bytes
+2026/07/21-15:25:11.913 56f4 Generated table #230@1: 9549 keys, 2151128 bytes
+2026/07/21-15:25:11.998 56f4 Generated table #231@1: 20353 keys, 2208643 bytes
+2026/07/21-15:25:12.043 56f4 Generated table #232@1: 3663 keys, 2121553 bytes
+2026/07/21-15:25:12.199 56f4 Generated table #233@1: 88686 keys, 2235360 bytes
+2026/07/21-15:25:12.312 56f4 Generated table #234@1: 56958 keys, 1650456 bytes
+2026/07/21-15:25:12.312 56f4 Compacted 1@1 + 7@2 files => 12659558 bytes
+2026/07/21-15:25:12.318 56f4 compacted to: files[ 0 0 6 0 0 0 0 ]

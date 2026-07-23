@@ -1,0 +1,13 @@
+
+### Prueba de fuego definitiva: Registrar un cliente con todos los campos reales
+POST http://localhost:4000/api/clientes
+Content-Type: application/json
+
+{
+  "nombre": "Carlos",
+  "apellido": "Mendoza",
+  "direccion": "Calle 5 # 34-12, Cali",
+  "ciudad": "Cali",
+  "correo": "carlos@gmail.com",
+  "telefono": "3157654321"
+}

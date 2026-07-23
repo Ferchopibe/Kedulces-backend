@@ -1,0 +1,61 @@
+
+/* Variables de Diseño Boutique */
+:root {
+    --navy: #0F172A;
+    --gold: #B59458;
+    --cream: #F8F5F0;
+}
+
+/* Base */
+body {
+    background-color: var(--cream);
+    color: var(--navy);
+    font-family: 'Montserrat', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Tipografía Elegante */
+h1, h2, h3, h4 {
+    font-family: 'Playfair Display', serif;
+}
+
+/* Componentes de Lujo */
+.gold-border {
+    border: 2px solid var(--gold);
+}
+
+.text-gold {
+    color: var(--gold);
+}
+
+.bg-navy-custom {
+    background-color: var(--navy);
+}
+
+.btn-luxury {
+    background-color: var(--navy);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    padding: 1rem 2rem;
+    transition: all 0.3s ease;
+}
+
+.btn-luxury:hover {
+    background-color: var(--gold);
+    color: white;
+}
+
+/* Tarjetas de Servicios */
+.service-card {
+    background-color: #ffffff;
+    border-left: 3px solid var(--gold);
+    padding: 2rem;
+    transition: all 0.5s ease;
+}
+
+.service-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+}
