@@ -4,8 +4,23 @@ const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import connection from './db.js'; // 👈 1. IMPORTAMOS TU CONEXIÓN A MYSQL (Ajusta el nombre si se llama diferente)
 
+
+
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+        ]
+    }
 });
 
 client.on('qr', (qr) => {
@@ -97,4 +112,10 @@ client.on('message', async (msg) => {
     }
 });
 
-client.initialize();
+
+
+try {
+    client.initialize();
+} catch (error) {
+    console.log("WhatsApp Web no pudo inicializarse:", error.message);
+}
