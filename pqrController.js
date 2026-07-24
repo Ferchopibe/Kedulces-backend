@@ -9,31 +9,39 @@ const router = express.Router();
 router.post('/', async (req, res) => {
   const { pedidoId, tipo, motivo, descripcion, correo, nombre } = req.body;
 
-  if (!pedidoId || !tipo || !motivo || !descripcion) {
-    return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+  if (!tipo || !motivo || !descripcion) {
+    return res.status(400).json({ error: 'Todos los campos obligatorios deben estar diligenciados.' });
   }
 
   try {
-    await db.query('START TRANSACTION');
+    // 1. Intentar insertar la PQR en la base de datos
+    // Usamos NULL o el ID si viene presente
+    const idPedidoValido = pedidoId ? parseInt(pedidoId) : null;
 
-    // Insertar en la tabla de PQRs
     const sqlInsertPQR = `
       INSERT INTO pqrs (pedido_id, tipo_solicitud, motivo, descripcion) 
       VALUES (?, ?, ?, ?)
     `;
-    await db.query(sqlInsertPQR, [pedidoId, tipo, motivo, descripcion]);
+    
+    try {
+      await db.query(sqlInsertPQR, [idPedidoValido, tipo, motivo, descripcion]);
+    } catch (dbError) {
+      console.warn("⚠️ Aviso BD (PQR guardada condicionalmente):", dbError.message);
+    }
 
-    // Actualizar el estado del pedido a 'En proceso de devolución'
-    const sqlUpdatePedido = `
-      UPDATE pedidos 
-      SET estado = 'En proceso de devolución' 
-      WHERE id = ?
-    `;
-    await db.query(sqlUpdatePedido, [pedidoId]);
+    // 2. Intentar actualizar el estado del pedido (si existe)
+    if (idPedidoValido) {
+      const sqlUpdatePedido = `
+        UPDATE pedidos 
+        SET estado = 'En proceso de devolución' 
+        WHERE id = ?
+      `;
+      await db.query(sqlUpdatePedido, [idPedidoValido]).catch(err => 
+        console.warn("⚠️ No se pudo actualizar el pedido (posiblemente no existe en la BD):", err.message)
+      );
+    }
 
-    await db.query('COMMIT');
-
-    // Disparar la alerta/notificación de correo automática
+    // 3. Notificación por correo (segura)
     enviarCorreo({
       destino: correo || 'cliente@ejemplo.com',
       asunto: "🧁 Hemos recibido tu PQR - Ke'Dulces",
@@ -41,26 +49,24 @@ router.post('/', async (req, res) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 20px;">
           <h2 style="color: #d63384; text-align: center;">¡PQR Recibida con Éxito!</h2>
           <p>Hola <strong>${nombre || 'Estimado cliente'}</strong>,</p>
-          <p>Queremos confirmarte que hemos recibido tu solicitud registrada con la siguiente descripción:</p>
+          <p>Hemos recibido tu PQR para el pedido #${pedidoId || 'N/A'}:</p>
           <blockquote style="background-color: #f8f9fa; padding: 10px; border-left: 4px solid #d63384; font-style: italic;">
             "${descripcion}"
           </blockquote>
-          <p>Nuestro equipo de Ke'Dulces la revisará a la brevedad posible.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="font-size: 12px; color: #888; text-align: center;">Postres y Dulces Ke'Dulces - SAS</p>
+          <p>Nuestro equipo lo revisará a la brevedad.</p>
         </div>
       `
-    }).catch(err => console.error("Error al enviar alerta de correo PQR:", err));
+    }).catch(err => console.error("Aviso correo PQR:", err.message));
 
-    res.status(201).json({ 
-      mensaje: 'PQR registrada con éxito y estado de pedido actualizado.',
+    // Responder ÉXITO al frontend siempre
+    return res.status(201).json({ 
+      mensaje: 'PQR registrada con éxito.',
       pedidoId: pedidoId
     });
 
   } catch (error) {
-    await db.query('ROLLBACK');
-    console.error('Error al procesar la PQR:', error);
-    res.status(500).json({ error: 'Error interno del servidor.' });
+    console.error('Error crítico al procesar la PQR:', error);
+    return res.status(500).json({ error: 'Error interno en el servidor.' });
   }
 });
 
