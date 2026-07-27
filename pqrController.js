@@ -1,6 +1,6 @@
 
 import db from '../config/db.js'; 
-import { enviarCorreo } from '../services/mailer.js'; 
+import { enviarCorreo } from '../config/mailer.js'; // 👈 Cambiado a 'config'
 
 export const crearPQR = async (req, res) => {
   const { pedidoId, clienteId, tipo, motivo, descripcion, correo, nombre } = req.body;
