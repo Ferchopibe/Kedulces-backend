@@ -1,6 +1,6 @@
 
 import db from '../config/db.js'; 
-import { enviarCorreo } from '../config/mailer.js'; // 👈 Cambiado a 'config'
+import { enviarCorreo } from '../config/mailer.js';
 
 export const crearPQR = async (req, res) => {
   const { pedidoId, clienteId, tipo, motivo, descripcion, correo, nombre } = req.body;
@@ -9,10 +9,13 @@ export const crearPQR = async (req, res) => {
     // 1. Intentar insertar en la base de datos
     let radicadoId = Math.floor(1000 + Math.random() * 9000); // ID de respaldo
 
+    const motivoFinal = motivo || 'Sin especificar';
+    const descripcionFinal = descripcion || 'Sin descripción proporcionada';
+
     try {
       const [result] = await db.query(
         'INSERT INTO pqrs (pedido_id, cliente_id, tipo, motivo, descripcion) VALUES (?, ?, ?, ?, ?)',
-        [pedidoId || 1, clienteId || 1, tipo || 'Devolución', motivo, descripcion]
+        [pedidoId || 1, clienteId || 1, tipo || 'Devolución', motivoFinal, descripcionFinal]
       );
       if (result && result.insertId) {
         radicadoId = result.insertId;
@@ -37,10 +40,10 @@ export const crearPQR = async (req, res) => {
             <ul>
               <li><strong>Radicado (#):</strong> ${radicadoId}</li>
               <li><strong>Pedido:</strong> #${pedidoId || 'N/A'}</li>
-              <li><strong>Motivo:</strong> ${motivo}</li>
+              <li><strong>Motivo:</strong> ${motivoFinal}</li>
             </ul>
             <blockquote style="background-color: #f8f9fa; padding: 10px; border-left: 4px solid #d63384; font-style: italic;">
-              "${descripcion}"
+              "${descripcionFinal}"
             </blockquote>
             <p>Nuestro equipo lo revisará a la brevedad posible.</p>
           </div>
