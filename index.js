@@ -1,4 +1,7 @@
+import cors from 'cors';
 
+// Esto le dice al backend que acepte peticiones de CUALQUIER lugar
+app.use(cors());
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -8,6 +11,8 @@ import authRoutes from './routes/authRoutes.js';
 import verificarToken from './middlewares/authMiddleware.js'; 
 import './chatbot.js'; 
 import { enviarCorreo } from './mailer.js';
+
+
 
 dotenv.config();
 const app = express();
