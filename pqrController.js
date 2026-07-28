@@ -1,12 +1,12 @@
 
-import db from '../config/db.js'; 
+import db from './config/db.js'; 
 import { enviarCorreo } from '../config/mailer.js';
 
 export const crearPQR = async (req, res) => {
   const { pedidoId, clienteId, tipo, motivo, descripcion, correo, nombre } = req.body;
 
   try {
-    // 1. Intentar insertar en la base de datos
+    // 1. Intentar insertar la PQR en la base de datos
     let radicadoId = Math.floor(1000 + Math.random() * 9000); // ID de respaldo
 
     const motivoFinal = motivo || 'Sin especificar';
@@ -20,41 +20,51 @@ export const crearPQR = async (req, res) => {
       if (result && result.insertId) {
         radicadoId = result.insertId;
       }
+
+      // Trazabilidad automática: Actualizar el estado del pedido asociado
+      if (pedidoId) {
+        await db.query(
+          "UPDATE pedidos SET estado = 'En proceso de devolución' WHERE id_pedido = ?",
+          [pedidoId]
+        );
+      }
     } catch (dbError) {
       console.warn("⚠️ Aviso BD (PQR guardada condicionalmente):", dbError.message);
     }
 
-    // 2. Destinatario del correo
-    const emailDestino = correo || 'luisfernandopibe51@gmail.com';
+    // 2. Destinatario del correo (Toma dinámicamente el correo recibido en req.body)
+    const emailDestino = correo;
 
     // 3. Enviar correo de confirmación
-    try {
-      await enviarCorreo({
-        destino: emailDestino,
-        asunto: `🧁 Confirmación de PQR Radicado #${radicadoId} - Ke'Dulces`,
-        htmlContent: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 20px;">
-            <h2 style="color: #d63384; text-align: center;">¡PQR Recibida con Éxito!</h2>
-            <p>Hola <strong>${nombre || 'Estimado cliente'}</strong>,</p>
-            <p>Hemos recibido tu solicitud y se le asignó el siguiente número de seguimiento:</p>
-            <ul>
-              <li><strong>Radicado (#):</strong> ${radicadoId}</li>
-              <li><strong>Pedido:</strong> #${pedidoId || 'N/A'}</li>
-              <li><strong>Motivo:</strong> ${motivoFinal}</li>
-            </ul>
-            <blockquote style="background-color: #f8f9fa; padding: 10px; border-left: 4px solid #d63384; font-style: italic;">
-              "${descripcionFinal}"
-            </blockquote>
-            <p>Nuestro equipo lo revisará a la brevedad posible.</p>
-          </div>
-        `
-      });
-      console.log(`📧 Correo de PQR #${radicadoId} enviado a: ${emailDestino}`);
-    } catch (mailError) {
-      console.error("❌ Falló el envío de correo Nodemailer:", mailError.message);
+    if (emailDestino) {
+      try {
+        await enviarCorreo({
+          destino: emailDestino,
+          asunto: `🧁 Confirmación de PQR Radicado #${radicadoId} - Ke'Dulces`,
+          htmlContent: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 20px;">
+              <h2 style="color: #d63384; text-align: center;">¡PQR Recibida con Éxito!</h2>
+              <p>Hola <strong>${nombre || 'Estimado cliente'}</strong>,</p>
+              <p>Hemos recibido tu solicitud y se le asignó el siguiente número de seguimiento:</p>
+              <ul>
+                <li><strong>Radicado (#):</strong> ${radicadoId}</li>
+                <li><strong>Pedido:</strong> #${pedidoId || 'N/A'}</li>
+                <li><strong>Motivo:</strong> ${motivoFinal}</li>
+              </ul>
+              <blockquote style="background-color: #f8f9fa; padding: 10px; border-left: 4px solid #d63384; font-style: italic;">
+                "${descripcionFinal}"
+              </blockquote>
+              <p>Nuestro equipo lo revisará a la brevedad posible.</p>
+            </div>
+          `
+        });
+        console.log(`📧 Correo de PQR #${radicadoId} enviado exitosamente a: ${emailDestino}`);
+      } catch (mailError) {
+        console.error("❌ Falló el envío de correo Nodemailer:", mailError.message);
+      }
     }
 
-    // 4. Responder al Frontend SIEMPRE con el número de radicado
+    // 4. Responder al Frontend con el número de radicado
     return res.status(201).json({
       mensaje: 'PQR registrada correctamente',
       radicado: radicadoId
