@@ -1,4 +1,3 @@
-import cors from 'cors';
 
 // Esto le dice al backend que acepte peticiones de CUALQUIER lugar
 app.use(cors());
