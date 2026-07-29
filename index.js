@@ -4,7 +4,9 @@ app.use(cors());
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import pool from './config/db.js';
+
+// Dejarlo así (como estaba al principio):
+import pool from './db.js';
 
 import pqrRouter from './pqrController.js'; 
 import authRoutes from './routes/authRoutes.js'; 

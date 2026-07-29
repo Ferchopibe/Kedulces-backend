@@ -1,6 +1,7 @@
 
 import express from 'express';
-import db from './config/db.js';
+import db from './db.js';
+
 import { enviarCorreo } from './config/mailer.js';
 
 const router = express.Router();
