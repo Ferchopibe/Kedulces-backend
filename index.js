@@ -3,9 +3,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Dejarlo así (como estaba al principio):
+// Importación de la conexión a la base de datos
 import pool from './db.js';
 
+// Importación de rutas y controladores
 import pqrRouter from './pqrController.js'; 
 import authRoutes from './routes/authRoutes.js'; 
 import verificarToken from './middlewares/authMiddleware.js'; 
@@ -16,6 +17,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Configuración de CORS para autorizar peticiones desde Vercel y entorno local
 app.use(cors({
   origin: ['https://kedulces-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -23,18 +25,15 @@ app.use(cors({
   credentials: true
 }));
 
-// Responder inmediatamente a las peticiones PREFLIGHT (OPTIONS)
-app.options('*', cors());
-
 app.use(express.json());
 
 // 2. Rutas de Autenticación
 app.use('/api/auth', authRoutes);
 
-// 3. Rutas de PQRs (PÚBLICAS para que el formulario funcione desde Vercel)
+// 3. Rutas de PQRs (PÚBLICAS para permitir envíos desde la web en Vercel)
 app.use('/api/pqrs', pqrRouter); 
 
-// Ruta de prueba
+// Ruta raíz de verificación
 app.get('/', (req, res) => {
   res.json({ 
     mensaje: "¡Bienvenido al servidor de Postres y Dulces Ke'Dulces!",
@@ -57,7 +56,7 @@ app.get('/api/productos', async (req, res) => {
   }
 });
 
-// Verificación de Base de Datos
+// Verificación de conexión con la Base de Datos
 async function verificarConexionBD() {
   try {
     const [rows] = await pool.query('SELECT 1 + 1 AS resultado');
@@ -68,7 +67,7 @@ async function verificarConexionBD() {
   }
 }
 
-// Endpoint de prueba de Correo
+// Endpoint de prueba de envío de correo
 app.post('/api/test-email', async (req, res) => {
   const { email } = req.body;
   try {
@@ -88,7 +87,7 @@ app.post('/api/test-email', async (req, res) => {
   }
 });
 
-// Encender Servidor
+// Inicialización del servidor HTTP
 app.listen(PORT, async () => {
   console.log(`🚀 Servidor de Ke'Dulces corriendo en el puerto http://localhost:${PORT}`);
   await verificarConexionBD();
