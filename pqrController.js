@@ -1,27 +1,31 @@
 
-import db from './config/db.js'; 
-import { enviarCorreo } from '../config/mailer.js';
+import express from 'express';
+import db from './config/db.js';
+import { enviarCorreo } from './config/mailer.js';
 
-export const crearPQR = async (req, res) => {
+const router = express.Router();
+
+router.post('/', async (req, res) => {
   const { pedidoId, clienteId, tipo, motivo, descripcion, correo, nombre } = req.body;
 
   try {
-    // 1. Intentar insertar la PQR en la base de datos
-    let radicadoId = Math.floor(1000 + Math.random() * 9000); // ID de respaldo
+    let radicadoId = Math.floor(1000 + Math.random() * 9000);
 
     const motivoFinal = motivo || 'Sin especificar';
     const descripcionFinal = descripcion || 'Sin descripción proporcionada';
 
+    // 1. Intentar guardar en Base de Datos (tratando IDs vacíos como NULL)
     try {
       const [result] = await db.query(
         'INSERT INTO pqrs (pedido_id, cliente_id, tipo, motivo, descripcion) VALUES (?, ?, ?, ?, ?)',
-        [pedidoId || 1, clienteId || 1, tipo || 'Devolución', motivoFinal, descripcionFinal]
+        [pedidoId || null, clienteId || null, tipo || 'Petición', motivoFinal, descripcionFinal]
       );
+
       if (result && result.insertId) {
         radicadoId = result.insertId;
       }
 
-      // Trazabilidad automática: Actualizar el estado del pedido asociado
+      // Si hay un pedido asociado, actualizar su estado
       if (pedidoId) {
         await db.query(
           "UPDATE pedidos SET estado = 'En proceso de devolución' WHERE id_pedido = ?",
@@ -29,13 +33,11 @@ export const crearPQR = async (req, res) => {
         );
       }
     } catch (dbError) {
-      console.warn("⚠️ Aviso BD (PQR guardada condicionalmente):", dbError.message);
+      console.warn("⚠️ Aviso BD (Error al insertar PQR):", dbError.message);
     }
 
-    // 2. Destinatario del correo (Toma dinámicamente el correo recibido en req.body)
+    // 2. Enviar correo de confirmación
     const emailDestino = correo;
-
-    // 3. Enviar correo de confirmación
     if (emailDestino) {
       try {
         await enviarCorreo({
@@ -58,13 +60,13 @@ export const crearPQR = async (req, res) => {
             </div>
           `
         });
-        console.log(`📧 Correo de PQR #${radicadoId} enviado exitosamente a: ${emailDestino}`);
+        console.log(`📧 Correo enviado exitosamente a: ${emailDestino}`);
       } catch (mailError) {
         console.error("❌ Falló el envío de correo Nodemailer:", mailError.message);
       }
     }
 
-    // 4. Responder al Frontend con el número de radicado
+    // 3. Responder al Frontend
     return res.status(201).json({
       mensaje: 'PQR registrada correctamente',
       radicado: radicadoId
@@ -74,4 +76,6 @@ export const crearPQR = async (req, res) => {
     console.error("Error general en PQR:", error);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
-};
+});
+
+export default router;

@@ -4,7 +4,8 @@ app.use(cors());
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import pool from './db.js'; 
+import pool from './config/db.js';
+
 import pqrRouter from './pqrController.js'; 
 import authRoutes from './routes/authRoutes.js'; 
 import verificarToken from './middlewares/authMiddleware.js'; 
