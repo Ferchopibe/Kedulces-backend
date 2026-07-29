@@ -4,9 +4,15 @@ import nodemailer from 'nodemailer';
 // 1. Configuración del transporte SMTP de correo
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // usa TLS
   auth: {
     user: process.env.EMAIL_USER || 'kedulces.postres@gmail.com',
-    pass: process.env.EMAIL_PASS || 'tu_contraseña_de_aplicacion'
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // Evita bloqueos de certificados en Railway
   }
 });
 
@@ -20,10 +26,10 @@ export const enviarCorreo = async ({ destino, asunto, htmlContent }) => {
       html: htmlContent
     };
 
-    // Modo prueba si no hay clave SMTP real
+    // Modo prueba si no hay clave SMTP real configurada
     if (!process.env.EMAIL_PASS || process.env.EMAIL_PASS === 'tu_contraseña_de_aplicacion') {
       console.log('----------------------------------------------------');
-      console.log('📧 [MODO PRUEBA NODEMAILER] Correo generado con éxito:');
+      console.log('📧 [MODO PRUEBA NODEMAILER] Correo generado con éxito (Sin enviar):');
       console.log(`Para: ${destino}`);
       console.log(`Asunto: ${asunto}`);
       console.log('----------------------------------------------------');

@@ -5,6 +5,23 @@ import { enviarCorreo } from './mailer.js';
 
 const router = express.Router();
 
+// -------------------------------------------------------------
+// 1. OBTENER TODAS LAS PQRS (RUTA GET - Usada por el Panel Admin)
+// -------------------------------------------------------------
+router.get('/', async (req, res) => {
+  try {
+    const [filas] = await db.query('SELECT * FROM pqrs ORDER BY id DESC');
+    return res.json(filas);
+  } catch (error) {
+    console.error('⚠️ Error en GET /api/pqrs (Consultando BD):', error.message);
+    // Si la tabla no existe o hay error de BD, devolvemos un array vacío para evitar romper el frontend
+    return res.json([]);
+  }
+});
+
+// -------------------------------------------------------------
+// 2. CREAR UNA NUEVA PQR (RUTA POST - Usada por el Formulario)
+// -------------------------------------------------------------
 router.post('/', async (req, res) => {
   const { pedidoId, clienteId, tipo, motivo, descripcion, correo, nombre } = req.body;
 
@@ -14,7 +31,7 @@ router.post('/', async (req, res) => {
     const motivoFinal = motivo || 'Sin especificar';
     const descripcionFinal = descripcion || 'Sin descripción proporcionada';
 
-    // 1. Intentar guardar en Base de Datos (tratando IDs vacíos como NULL)
+    // 1. Guardar en la Base de Datos
     try {
       const [result] = await db.query(
         'INSERT INTO pqrs (pedido_id, cliente_id, tipo, motivo, descripcion) VALUES (?, ?, ?, ?, ?)',
