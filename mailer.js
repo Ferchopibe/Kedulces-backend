@@ -3,17 +3,17 @@ import nodemailer from 'nodemailer';
 
 // 1. Configuración del transporte SMTP de correo
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
   host: 'smtp.gmail.com',
   port: 587,
-  secure: false, // usa TLS
+  secure: false, // TLS / STARTTLS
   auth: {
     user: process.env.EMAIL_USER || 'kedulces.postres@gmail.com',
     pass: process.env.EMAIL_PASS
   },
   tls: {
     rejectUnauthorized: false // Evita bloqueos de certificados en Railway
-  }
+  },
+  connectionTimeout: 10000 // 10 segundos de espera máxima
 });
 
 // 2. Función helper reutilizable para enviar correos

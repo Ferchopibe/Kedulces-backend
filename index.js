@@ -1,94 +1,202 @@
 
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
 
-// Importación de la conexión a la base de datos
-import pool from './db.js';
-
-// Importación de rutas y controladores
-import pqrRouter from './pqrController.js'; 
-import authRoutes from './routes/authRoutes.js'; 
-import verificarToken from './middlewares/authMiddleware.js'; 
-import './chatbot.js'; 
-import { enviarCorreo } from './mailer.js';
-
-dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Configuración de CORS para autorizar peticiones desde Vercel y entorno local
-app.use(cors({
-  origin: ['https://kedulces-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
+// ==========================================
+// CONFIGURACIÓN DE CORS (UNIFICADA Y COMPLETA)
+// ==========================================
+const corsOptions = {
+  origin: '*', // Permite solicitudes desde cualquier dominio (Netlify, Celular, etc.)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+
+// Middleware adicional para garantizar la respuesta correcta a peticiones PREFLIGHT (OPTIONS)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, ngrok-skip-browser-warning');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use(express.json());
 
-// 2. Rutas de Autenticación
-app.use('/api/auth', authRoutes);
-
-// 3. Rutas de PQRs (PÚBLICAS para permitir envíos desde la web en Vercel)
-app.use('/api/pqrs', pqrRouter); 
-
-// Ruta raíz de verificación
-app.get('/', (req, res) => {
-  res.json({ 
-    mensaje: "¡Bienvenido al servidor de Postres y Dulces Ke'Dulces!",
-    estado: "Servidor en línea",
-    zona_horaria: process.env.TZ 
-  });
+// ==========================================
+// CONFIGURACIÓN DE NODEMAILER (CORREO)
+// ==========================================
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'luisfernandopibe51@gmail.com',
+    pass: 'frwjgnufmxmdoryq'
+  }
 });
 
-// Ruta Pública: Catálogo de productos
-app.get('/api/productos', async (req, res) => {
+// Arreglo temporal de clientes en memoria
+let clientes = [
+  {
+    id: 1,
+    nombre: "Cliente de Prueba",
+    correo: "prueba@correo.com",
+    telefono: "3001234567",
+    descripcion_caso: "Consulta inicial de prueba",
+    estado: "Nuevo",
+    fecha_registro: new Date(),
+    honorarios: 500000,
+    abonos: 100000,
+    saldo: 400000
+  }
+];
+
+// ==========================================
+// RUTAS DE LA API (/api/clientes)
+// ==========================================
+
+// 1. Obtener todos los clientes (GET)
+app.get('/api/clientes', (req, res) => {
+  console.log('📥 Petición GET recibida: Enviando lista de clientes...');
+  res.status(200).json(clientes);
+});
+
+// 2. Registrar/Crear un cliente (POST)
+app.post('/api/clientes', async (req, res) => {
+  console.log('📤 Petición POST recibida: Registrando cliente...');
   try {
-    const [rows] = await pool.query('SELECT * FROM productos WHERE disponible = 1');
-    res.json(rows);
-  } catch (error) {
-    console.error('❌ Error al obtener los productos:', error.message);
-    res.status(500).json({ 
-      error: 'Error interno del servidor', 
-      detalle: 'No se pudo cargar el catálogo de postres en este momento.' 
+    const data = req.body || {};
+    const h = parseFloat(data.honorarios) || 0;
+    const a = parseFloat(data.abonos) || 0;
+
+    const nuevoCliente = {
+      id: clientes.length ? clientes[clientes.length - 1].id + 1 : 1,
+      nombre: data.nombre || 'Sin Nombre',
+      correo: data.correo || '',
+      telefono: data.telefono || '',
+      descripcion_caso: data.descripcion_caso || '',
+      estado: 'Nuevo',
+      fecha_registro: new Date(),
+      honorarios: h,
+      abonos: a,
+      saldo: h - a
+    };
+
+    clientes.push(nuevoCliente);
+
+    // Envío automático de correo de confirmación
+    if (nuevoCliente.correo) {
+      try {
+        await transporter.sendMail({
+          from: '"Bufete Jurídico Cardozo" <luisfernandopibe51@gmail.com>',
+          to: nuevoCliente.correo,
+          subject: 'Confirmación de Consulta - Bufete Jurídico Cardozo',
+          html: `
+            <h2>Estimado/a ${nuevoCliente.nombre},</h2>
+            <p>Hemos recibido su consulta legal en nuestro sistema exitosamente.</p>
+            <p><strong>Detalles recibidos:</strong></p>
+            <ul>
+              <li><strong>Teléfono:</strong> ${nuevoCliente.telefono}</li>
+              <li><strong>Mensaje:</strong> ${nuevoCliente.descripcion_caso}</li>
+            </ul>
+            <p>Un miembro de nuestro Bufete Jurídico se pondrá en contacto con usted a la brevedad.</p>
+            <br>
+            <p>Atentamente,<br><strong>Miguel Angel Cardozo Cisneros | Bufete Jurídico</strong></p>
+          `
+        });
+        console.log(`✉️ Correo de confirmación enviado con éxito a: ${nuevoCliente.correo}`);
+      } catch (mailError) {
+        console.warn('⚠️ No se pudo enviar el correo:', mailError.message);
+      }
+    }
+
+    res.status(201).json({
+      mensaje: 'Cliente registrado con éxito',
+      cliente: nuevoCliente
     });
+  } catch (error) {
+    console.error('Error al registrar cliente:', error);
+    res.status(500).json({ error: 'Error interno al registrar cliente' });
   }
 });
 
-// Verificación de conexión con la Base de Datos
-async function verificarConexionBD() {
+// 3. Actualizar estado del cliente (POST)
+app.post('/api/clientes/actualizar-estado', (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT 1 + 1 AS resultado');
-    console.log('✅ Conexión exitosa a la base de datos de Ke\'Dulces.');
-  } catch (error) {
-    console.error('❌ Error crítico al conectar a la base de datos:', error.message);
-    process.exit(1); 
-  }
-}
+    const { id, nuevoEstado } = req.body || {};
+    const cliente = clientes.find(c => c.id === parseInt(id));
 
-// Endpoint de prueba de envío de correo
-app.post('/api/test-email', async (req, res) => {
-  const { email } = req.body;
-  try {
-    const resultado = await enviarCorreo({
-      destino: email || 'cliente@ejemplo.com',
-      asunto: '🧁 ¡Bienvenido a Ke\'Dulces! Confirmación de prueba',
-      htmlContent: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #d63384;">¡Gracias por contactar a Ke'Dulces!</h2>
-          <p>Este es un correo de confirmación generado automáticamente por nuestro servidor Node.js.</p>
-        </div>
-      `
-    });
-    res.json({ mensaje: 'Prueba de correo procesada correctamente', resultado });
+    if (!cliente) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+
+    cliente.estado = nuevoEstado;
+    res.status(200).json({ mensaje: 'Estado actualizado con éxito', cliente });
   } catch (error) {
-    res.status(500).json({ error: 'Fallo al procesar el envío de correo' });
+    console.error('Error al actualizar estado:', error);
+    res.status(500).json({ error: 'Error interno al actualizar estado' });
   }
 });
 
-// Inicialización del servidor HTTP
-app.listen(PORT, async () => {
-  console.log(`🚀 Servidor de Ke'Dulces corriendo en el puerto http://localhost:${PORT}`);
-  await verificarConexionBD();
+// 4. Actualizar datos completos del cliente (PUT)
+app.put('/api/clientes/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const index = clientes.findIndex(c => c.id === id);
+
+    if (index === -1) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+
+    const data = req.body || {};
+    const h = parseFloat(data.honorarios) || 0;
+    const a = parseFloat(data.abonos) || 0;
+
+    clientes[index] = {
+      ...clientes[index],
+      nombre: data.nombre ?? clientes[index].nombre,
+      correo: data.correo ?? clientes[index].correo,
+      telefono: data.telefono ?? clientes[index].telefono,
+      descripcion_caso: data.descripcion_caso ?? clientes[index].descripcion_caso,
+      honorarios: h,
+      abonos: a,
+      saldo: h - a
+    };
+
+    res.status(200).json({ mensaje: 'Cliente actualizado correctamente', cliente: clientes[index] });
+  } catch (error) {
+    console.error('Error al actualizar cliente:', error);
+    res.status(500).json({ error: 'Error interno al actualizar cliente' });
+  }
+});
+
+// 5. Eliminar un cliente (DELETE)
+app.delete('/api/clientes/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const clienteExiste = clientes.some(c => c.id === id);
+
+    if (!clienteExiste) {
+      return res.status(404).json({ error: 'Cliente no encontrado' });
+    }
+
+    clientes = clientes.filter(c => c.id !== id);
+    res.status(200).json({ mensaje: 'Cliente eliminado correctamente' });
+  } catch (error) {
+    console.error('Error al eliminar cliente:', error);
+    res.status(500).json({ error: 'Error interno al eliminar cliente' });
+  }
+});
+
+// Arrancar el servidor
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor backend escuchando en el puerto ${PORT}`);
 });
