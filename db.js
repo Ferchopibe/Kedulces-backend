@@ -3,21 +3,23 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Se configura la conexión utilizando la URL de la base de datos o variables individuales
+// Se limpia el host para eliminar espacios o saltos de línea invisibles (\r\n)
+const cleanHost = process.env.DB_HOST ? process.env.DB_HOST.trim() : '';
+
 const pool = mysql.createPool(
   process.env.DATABASE_URL
     ? {
-        uri: process.env.DATABASE_URL,
+        uri: process.env.DATABASE_URL.trim(),
         ssl: {
           rejectUnauthorized: false
         }
       }
     : {
-        host: process.env.DB_HOST,
+        host: cleanHost,
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
-        port: Number(process.env.DB_PORT) || 3306,
+        port: Number(process.env.DB_PORT) || 11816,
         ssl: {
           rejectUnauthorized: false
         },
