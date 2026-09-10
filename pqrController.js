@@ -1,106 +1,82 @@
 
-import db from './db.js';
 import express from 'express';
+import pool from './db.js';
 import { enviarCorreo } from './mailer.js';
 
 const router = express.Router();
 
-// -------------------------------------------------------------
-// 1. OBTENER TODAS LAS PQRS (RUTA GET - Usada por el Panel Admin)
-// -------------------------------------------------------------
+// GET /api/pqrs - Obtener todas las PQRs (útil para el panel de administración)
 router.get('/', async (req, res) => {
   try {
-    const [filas] = await db.query('SELECT * FROM pqrs ORDER BY id DESC');
-    return res.json(filas);
+    const [rows] = await pool.query('SELECT * FROM pqrs ORDER BY id_pqr DESC');
+    res.status(200).json(rows);
   } catch (error) {
-    console.error('⚠️ Error en GET /api/pqrs (Consultando BD):', error.message);
-    return res.json([]);
+    console.error('❌ Error al obtener PQRs:', error);
+    res.status(500).json({ error: 'Error al consultar la base de datos' });
   }
 });
 
-// -------------------------------------------------------------
-// 2. CREAR UNA NUEVA PQR (RUTA POST - Usada por el Formulario)
-// -------------------------------------------------------------
+// POST /api/pqrs - Registrar PQR y guardar en MySQL
 router.post('/', async (req, res) => {
-  const { pedidoId, clienteId, tipo, motivo, descripcion, correo, nombre } = req.body;
+  const { pedidoId, tipo_solicitud, motivo, descripcion, correo, nombre } = req.body;
 
   try {
-    let radicadoId = Math.floor(1000 + Math.random() * 9000);
+    // 1. Asignación de valores seguros para la tabla pqrs
+   
 
-    const motivoFinal = motivo || 'Sin especificar';
-    const descripcionFinal = descripcion || 'Sin descripción proporcionada';
+    const idPedidoValido = 1; // Fuerza la relación con el pedido base existente en MySQL
 
-    // 1. Guardar en la Base de Datos
-    try {
-      const [result] = await db.query(
-        'INSERT INTO pqrs (pedido_id, cliente_id, tipo, motivo, descripcion) VALUES (?, ?, ?, ?, ?)',
-        [pedidoId || null, clienteId || null, tipo || 'Petición', motivoFinal, descripcionFinal]
-      );
+    const tipoValido = tipo_solicitud || 'Devolución';
+    const motivoValido = motivo || 'General';
+    const descripcionValida = descripcion || 'Sin descripción detallada';
 
-      if (result && result.insertId) {
-        radicadoId = result.insertId;
-      }
+    // 2. Persistencia directa en la base de datos MySQL (Tabla pqrs)
+    const [resultadoBD] = await pool.query(
+      `INSERT INTO pqrs (pedido_id, tipo_solicitud, motivo, descripcion, estado_pqr) 
+       VALUES (?, ?, ?, ?, 'Pendiente')`,
+      [idPedidoValido, tipoValido, motivoValido, descripcionValida]
+    );
 
-      // Si hay un pedido asociado, actualizar su estado
-      if (pedidoId) {
-        await db.query(
-          "UPDATE pedidos SET estado = 'En proceso de devolución' WHERE id_pedido = ?",
-          [pedidoId]
-        );
-      }
-    } catch (dbError) {
-      console.warn("⚠️ Aviso BD (Error al insertar PQR):", dbError.message);
-    }
+    const pqrId = resultadoBD.insertId;
+    const numeroRadicado = `#PQR-${String(pqrId).padStart(6, '0')}`;
 
-    // 2. Enviar correo de confirmación al cliente y copia a la administración
-    const adminEmail = process.env.EMAIL_USER || 'kedulces.postres@gmail.com';
-    const emailDestino = correo || adminEmail;
+    console.log(`✅ PQR guardada exitosamente en MySQL. ID: ${pqrId} | Radicado: ${numeroRadicado}`);
 
-    // Lista de correos para notificar (Cliente + Administrador)
-    const destinatarios = [emailDestino];
-    if (correo && correo !== adminEmail) {
-      destinatarios.push(adminEmail);
-    }
-
-    try {
-      await enviarCorreo({
-        destino: destinatarios.join(', '),
-        asunto: `🧁 Nueva PQR Radicado #${radicadoId} - Ke'Dulces`,
+    // 3. Intento de envío de correo en segundo plano (No interrumpe el guardado en BD)
+    if (correo) {
+      enviarCorreo({
+        destino: correo,
+        asunto: `🧁 Confirmación de Solicitud ${numeroRadicado} - Ke'Dulces`,
         htmlContent: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 20px;">
-            <h2 style="color: #d63384; text-align: center;">¡PQR Registrada con Éxito!</h2>
+            <h2 style="color: #d63384; text-align: center;">¡PQR Recibida con Éxito!</h2>
             <p>Hola <strong>${nombre || 'Estimado cliente'}</strong>,</p>
-            <p>Hemos recibido la solicitud en nuestro sistema. Detalles del radicado:</p>
-            <ul>
-              <li><strong>Radicado (#):</strong> ${radicadoId}</li>
-              <li><strong>Pedido Referencia:</strong> #${pedidoId || 'N/A'}</li>
-              <li><strong>Tipo de Trámite:</strong> ${tipo || 'Petición'}</li>
-              <li><strong>Motivo:</strong> ${motivoFinal}</li>
-              <li><strong>Correo de Contacto:</strong> ${correo || 'No proporcionado'}</li>
-            </ul>
+            <p>Queremos confirmarte que hemos recibido tu solicitud registrada con el radicado <strong>${numeroRadicado}</strong>.</p>
+            <p><strong>Detalle de la solicitud:</strong></p>
             <blockquote style="background-color: #f8f9fa; padding: 12px; border-left: 4px solid #d63384; font-style: italic;">
-              "${descripcionFinal}"
+              "${descripcionValida}"
             </blockquote>
-            <p style="font-size: 12px; color: #666; text-align: center; margin-top: 20px;">
-              Postres y Dulces Ke'Dulces - Gestión Automatizada de PQRs
-            </p>
+            <p>Nuestro equipo de <em>Postres y Dulces Ke'Dulces</em> la revisará a la brevedad posible.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #888; text-align: center;">Postres y Dulces Ke'Dulces S.A.S. — Cali, Colombia</p>
           </div>
         `
-      });
-      console.log(`📧 Correo de PQR #${radicadoId} enviado a: ${destinatarios.join(', ')}`);
-    } catch (mailError) {
-      console.error("❌ Falló el envío de correo Nodemailer:", mailError.message);
+      }).catch(err => console.error("⚠️ Aviso: No se pudo enviar el correo de notificación:", err.message));
     }
 
-    // 3. Responder al Frontend
+    // 4. Respuesta exitosa inmediata al Frontend (Status 201)
     return res.status(201).json({
-      mensaje: 'PQR registrada correctamente',
-      radicado: radicadoId
+      mensaje: 'PQR registrada exitosamente',
+      radicado: numeroRadicado,
+      idPqr: pqrId
     });
 
   } catch (error) {
-    console.error("Error general en PQR:", error);
-    return res.status(500).json({ error: 'Error interno del servidor' });
+    console.error('❌ Error al procesar la PQR en MySQL:', error.message);
+    return res.status(500).json({ 
+      error: 'Error interno en la base de datos al guardar la PQR',
+      detalle: error.message 
+    });
   }
 });
 

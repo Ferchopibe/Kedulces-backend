@@ -1,16 +1,17 @@
+
 {
   "name": "software-kedulces",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend API para Postres y Dulces Ke'Dulces SAS",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Luis Fernando Orozco Benjumea",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.3",
