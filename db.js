@@ -3,19 +3,20 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Se limpia el host para eliminar espacios o saltos de línea invisibles (\r\n)
-const cleanHost = process.env.DB_HOST ? process.env.DB_HOST.trim() : '';
+// Sanitizamos de forma agresiva cualquier posible salto de línea o espacio
+const cleanHost = (process.env.DB_HOST || '').replace(/[\r\n\s]/g, '');
+const cleanUrl = (process.env.DATABASE_URL || '').replace(/[\r\n\s]/g, '');
 
 const pool = mysql.createPool(
-  process.env.DATABASE_URL
+  cleanUrl
     ? {
-        uri: process.env.DATABASE_URL.trim(),
+        uri: cleanUrl,
         ssl: {
           rejectUnauthorized: false
         }
       }
     : {
-        host: cleanHost,
+        host: cleanHost || 'mysql-kedulces-proyecto-kedulces.f.aivencloud.com',
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
