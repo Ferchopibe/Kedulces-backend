@@ -1,11 +1,11 @@
 
 import express from 'express';
-import pool from '../db.js'; // <-- CORREGIDO: retrocede una carpeta para encontrar el db.js de la raíz
-import { enviarCorreo } from '../mailer.js';
+import pool from './db.js'; // <-- RUTA CORRECTA: ambos archivos estan dentro de src/
+import { enviarCorreo } from './mailer.js';
 
 const router = express.Router();
 
-// GET /api/pqrs - Obtener todas las PQRs (útil para el panel de administración)
+// GET /api/pqrs - Obtener todas las PQRs
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM pqrs ORDER BY id_pqr DESC');
@@ -21,12 +21,11 @@ router.post('/', async (req, res) => {
   const { pedidoId, tipo_solicitud, motivo, descripcion, correo, nombre } = req.body;
 
   try {
-    const idPedidoValido = 1; // Fuerza la relación con el pedido base existente en MySQL
+    const idPedidoValido = 1; 
     const tipoValido = tipo_solicitud || 'Devolución';
     const motivoValido = motivo || 'General';
     const descripcionValida = descripcion || 'Sin descripción detallada';
 
-    // Persistencia directa en la base de datos MySQL (Tabla pqrs)
     const [resultadoBD] = await pool.query(
       `INSERT INTO pqrs (pedido_id, tipo_solicitud, motivo, descripcion, estado_pqr) 
        VALUES (?, ?, ?, ?, 'Pendiente')`,
@@ -38,7 +37,6 @@ router.post('/', async (req, res) => {
 
     console.log(`✅ PQR guardada exitosamente en MySQL. ID: ${pqrId} | Radicado: ${numeroRadicado}`);
 
-    // Intento de envío de correo en segundo plano
     if (correo && typeof enviarCorreo === 'function') {
       enviarCorreo({
         destino: correo,
