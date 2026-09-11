@@ -1,7 +1,7 @@
 
 import express from 'express';
-import pool from './db.js';
-import { enviarCorreo } from './mailer.js';
+import pool from '../db.js'; // <-- CORREGIDO: retrocede una carpeta para encontrar el db.js de la raíz
+import { enviarCorreo } from '../mailer.js';
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     res.status(200).json(rows);
   } catch (error) {
     console.error('❌ Error al obtener PQRs:', error);
-    res.status(500).json({ error: 'Error al consultar la base de datos' });
+    res.status(500).json({ error: 'Error al consultar la base de datos', detalle: error.message });
   }
 });
 
@@ -21,16 +21,12 @@ router.post('/', async (req, res) => {
   const { pedidoId, tipo_solicitud, motivo, descripcion, correo, nombre } = req.body;
 
   try {
-    // 1. Asignación de valores seguros para la tabla pqrs
-   
-
     const idPedidoValido = 1; // Fuerza la relación con el pedido base existente en MySQL
-
     const tipoValido = tipo_solicitud || 'Devolución';
     const motivoValido = motivo || 'General';
     const descripcionValida = descripcion || 'Sin descripción detallada';
 
-    // 2. Persistencia directa en la base de datos MySQL (Tabla pqrs)
+    // Persistencia directa en la base de datos MySQL (Tabla pqrs)
     const [resultadoBD] = await pool.query(
       `INSERT INTO pqrs (pedido_id, tipo_solicitud, motivo, descripcion, estado_pqr) 
        VALUES (?, ?, ?, ?, 'Pendiente')`,
@@ -42,8 +38,8 @@ router.post('/', async (req, res) => {
 
     console.log(`✅ PQR guardada exitosamente en MySQL. ID: ${pqrId} | Radicado: ${numeroRadicado}`);
 
-    // 3. Intento de envío de correo en segundo plano (No interrumpe el guardado en BD)
-    if (correo) {
+    // Intento de envío de correo en segundo plano
+    if (correo && typeof enviarCorreo === 'function') {
       enviarCorreo({
         destino: correo,
         asunto: `🧁 Confirmación de Solicitud ${numeroRadicado} - Ke'Dulces`,
@@ -64,7 +60,6 @@ router.post('/', async (req, res) => {
       }).catch(err => console.error("⚠️ Aviso: No se pudo enviar el correo de notificación:", err.message));
     }
 
-    // 4. Respuesta exitosa inmediata al Frontend (Status 201)
     return res.status(201).json({
       mensaje: 'PQR registrada exitosamente',
       radicado: numeroRadicado,
@@ -72,7 +67,7 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error al procesar la PQR en MySQL:', error.message);
+    console.error('❌ Error al procesar la PQR en MySQL:', error);
     return res.status(500).json({ 
       error: 'Error interno en la base de datos al guardar la PQR',
       detalle: error.message 
