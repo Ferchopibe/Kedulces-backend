@@ -1,94 +1,56 @@
 
-import express from 'express';
-import pool from './db.js';
-import { enviarCorreo } from './mailer.js';
+const db = require('../config/db'); // Importa la conexión a la base de datos MySQL
 
-const router = express.Router();
-
-// GET /api/pqrs - Obtener todas las PQRs
-router.get('/', async (req, res) => {
+// 1. OBTENER TODAS LAS PQRS (Consulta GET corregida para leer desde MySQL)
+exports.obtenerPqrs = async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM pqrs ORDER BY id_pqr DESC');
-    res.status(200).json(rows);
+    const [rows] = await db.query('SELECT * FROM pqrs ORDER BY id_pqr DESC');
+    res.json(rows);
   } catch (error) {
-    console.error('❌ Error al obtener PQRs:', error);
-    res.status(500).json({ error: 'Error al consultar la base de datos', detalle: error.message });
+    console.error('Error al obtener las PQRs desde la base de datos:', error);
+    res.status(500).json({ error: 'Error interno del servidor al consultar la base de datos' });
   }
-});
+};
 
-// POST /api/pqrs - Registrar PQR y guardar en MySQL
-router.post('/', async (req, res) => {
-  const { pedidoId, tipo_solicitud, motivo, descripcion, correo, nombre } = req.body;
-
+// 2. CREAR UNA NUEVA PQR (Consulta POST para insertar en MySQL)
+exports.crearPqr = async (req, res) => {
   try {
-    const tipoValido = tipo_solicitud || 'Devolución';
-    const motivoValido = motivo || 'General';
-    const descripcionValida = descripcion || 'Sin descripción detallada';
+    const { id_pedido, pedidoId, nombre, correo, tipo_solicitud, motivo, descripcion } = req.body;
+    
+    // Asigna el ID del pedido aceptando ambas nomenclaturas
+    const pedidoFinal = id_pedido || pedidoId || 1;
 
-    // 1. Asegurar la existencia de la tabla pqrs en Aiven
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS pqrs (
-        id_pqr INT AUTO_INCREMENT PRIMARY KEY,
-        pedido_id INT NULL,
-        tipo_solicitud VARCHAR(100),
-        motivo VARCHAR(100),
-        descripcion TEXT,
-        estado_pqr VARCHAR(50) DEFAULT 'Pendiente',
-        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    // 2. Inserción de la PQR en MySQL
-    const [resultadoBD] = await pool.query(
-      `INSERT INTO pqrs (pedido_id, tipo_solicitud, motivo, descripcion, estado_pqr) 
-       VALUES (?, ?, ?, ?, 'Pendiente')`,
-      [pedidoId || null, tipoValido, motivoValido, descripcionValida]
-    );
-
-    const pqrId = resultadoBD.insertId || Math.floor(Math.random() * 899999) + 100000;
-    const numeroRadicado = `#PQR-${String(pqrId).padStart(6, '0')}`;
-
-    console.log(`✅ PQR registrada exitosamente en MySQL. ID: ${pqrId} | Radicado: ${numeroRadicado}`);
-
-    // 3. Envío de correo en segundo plano
-    if (correo && typeof enviarCorreo === 'function') {
-      enviarCorreo({
-        destino: correo,
-        asunto: `🧁 Confirmación de Solicitud ${numeroRadicado} - Ke'Dulces`,
-        htmlContent: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 8px; padding: 20px;">
-            <h2 style="color: #d63384; text-align: center;">¡PQR Recibida con Éxito!</h2>
-            <p>Hola <strong>${nombre || 'Estimado cliente'}</strong>,</p>
-            <p>Queremos confirmarte que hemos recibido tu solicitud registrada con el radicado <strong>${numeroRadicado}</strong>.</p>
-            <p><strong>Detalle de la solicitud:</strong></p>
-            <blockquote style="background-color: #f8f9fa; padding: 12px; border-left: 4px solid #d63384; font-style: italic;">
-              "${descripcionValida}"
-            </blockquote>
-            <p>Nuestro equipo de <em>Postres y Dulces Ke'Dulces</em> la revisará a la brevedad posible.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p style="font-size: 12px; color: #888; text-align: center;">Postres y Dulces Ke'Dulces S.A.S. — Cali, Colombia</p>
-          </div>
-        `
-      }).catch(err => console.error("⚠️ Aviso: No se pudo enviar el correo de notificación:", err.message));
+    // Validación básica de campos requeridos
+    if (!nombre || !correo || !motivo || !descripcion) {
+      return res.status(400).json({ error: 'Todos los campos obligatorios deben ser diligenciados' });
     }
 
-    return res.status(201).json({
+    // Inserción en la base de datos MySQL (Aiven)
+    const query = `
+      INSERT INTO pqrs (id_pedido, nombre, correo, tipo_solicitud, motivo, descripcion, fecha_creacion)
+      VALUES (?, ?, ?, ?, ?, ?, NOW())
+    `;
+
+    const [resultado] = await db.query(query, [
+      pedidoFinal,
+      nombre,
+      correo,
+      tipo_solicitud || 'Devolución',
+      motivo,
+      descripcion
+    ]);
+
+    const idPqrGenerado = resultado.insertId;
+
+    // Respuesta exitosa
+    res.status(201).json({
       mensaje: 'PQR registrada exitosamente',
-      radicado: numeroRadicado,
-      idPqr: pqrId
+      radicado: `#PQR-${idPqrGenerado}`,
+      idPqr: idPqrGenerado
     });
 
   } catch (error) {
-    console.error('❌ Error al procesar la PQR en MySQL:', error.message);
-    
-    // Fallback de seguridad: asegura respuesta exitosa al frontend si ocurre alguna contingencia
-    const fallbackId = Math.floor(Math.random() * 899999) + 100000;
-    return res.status(201).json({
-      mensaje: 'PQR registrada exitosamente',
-      radicado: `#PQR-${fallbackId}`,
-      idPqr: fallbackId
-    });
+    console.error('Error al guardar la PQR en la base de datos:', error);
+    res.status(500).json({ error: 'Error interno del servidor al procesar la PQR' });
   }
-});
-
-export default router;
+};
