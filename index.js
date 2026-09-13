@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import pqrRouter from './pqrController.js'; // 👈 Importamos la conexión real a MySQL
+import pqrRouter from './controllers/pqrController.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -53,12 +53,12 @@ app.get('/productos', obtenerProductos);
 // ==========================================
 // RUTAS CONECTADAS A MYSQL (PQR)
 // ==========================================
-app.use('/api/pqrs', pqrRouter); // 👈 Redirige POST /api/pqrs directo a MySQL
-app.use('/pqrs', pqrRouter);     // 👈 Soporte para la ruta corta /pqrs
+app.use('/api/pqrs', pqrRouter);
+app.use('/pqrs', pqrRouter);
 
 // ==========================================
 // ARRANQUE DEL SERVIDOR
 // ==========================================
 app.listen(PORT, () => {
-  console.log(`🚀 Backend Ke'Dulces conectado a MySQL local corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Backend Ke'Dulces corriendo en puerto ${PORT}`);
 });
