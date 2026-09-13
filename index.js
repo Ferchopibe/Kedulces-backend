@@ -2,14 +2,14 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import pqrRouter from './controllers/pqrController.js'; // 👈 Apunta a la carpeta controllers
+import pqrRouter from './controllers/pqrController.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Configuración de CORS
 const corsOptions = {
-  origin: '*', 
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
   credentials: true
@@ -46,7 +46,7 @@ const obtenerProductos = (req, res) => {
 app.get('/api/productos', obtenerProductos);
 app.get('/productos', obtenerProductos);
 
-// Rutas PQR
+// Rutas de PQR
 app.use('/api/pqrs', pqrRouter);
 app.use('/pqrs', pqrRouter);
 
