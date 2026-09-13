@@ -1,8 +1,14 @@
 
 import nodemailer from 'nodemailer';
-import db from './db.js'; // Apunta a db.js ubicado en el mismo nivel dentro de src/
+import path from 'path';
+import { pathToFileURL } from 'url';
 
-// Configuración de Nodemailer usando las variables de entorno de Render
+// Resolución de ruta absoluta dinámica para evitar errores de carpetas en Render
+const dbPath = path.resolve(process.cwd(), 'db.js');
+const dbModule = await import(pathToFileURL(dbPath).href);
+const db = dbModule.default || dbModule;
+
+// Configuración de Nodemailer
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -48,7 +54,7 @@ export const crearPqr = async (req, res) => {
     const idPqrGenerado = resultado.insertId;
     const radicado = `#PQR-${idPqrGenerado}`;
 
-    // Envío del correo electrónico de notificación vía Gmail/Nodemailer
+    // Envío del correo electrónico de notificación
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         await transporter.sendMail({
