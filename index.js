@@ -2,14 +2,12 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import pqrController from './pqrController.js'; // 👈 Importación directa desde la raíz de src/
+import pqrRouter from './controllers/pqrController.js'; // 👈 Apunta a la carpeta controllers
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ==========================================
-// CONFIGURACIÓN DE CORS Y MIDDLEWARES
-// ==========================================
+// Configuración de CORS
 const corsOptions = {
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -32,9 +30,7 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// ==========================================
-// CATÁLOGO DE PRODUCTOS (KE'DULCES)
-// ==========================================
+// Catálogo de productos
 const productos = [
   { id: 1, nombre: 'Postre Tres Leches', precio: 12000, categoria: 'Postres' },
   { id: 2, nombre: 'Cheesecake de Maracuyá', precio: 14000, categoria: 'Postres' },
@@ -50,19 +46,10 @@ const obtenerProductos = (req, res) => {
 app.get('/api/productos', obtenerProductos);
 app.get('/productos', obtenerProductos);
 
-// ==========================================
-// RUTAS CONECTADAS A MYSQL (PQR)
-// ==========================================
-const router = express.Router();
-router.get('/', pqrController.obtenerPqrs);
-router.post('/', pqrController.crearPqr);
+// Rutas PQR
+app.use('/api/pqrs', pqrRouter);
+app.use('/pqrs', pqrRouter);
 
-app.use('/api/pqrs', router);
-app.use('/pqrs', router);
-
-// ==========================================
-// ARRANQUE DEL SERVIDOR
-// ==========================================
 app.listen(PORT, () => {
   console.log(`🚀 Backend Ke'Dulces corriendo en puerto ${PORT}`);
 });
