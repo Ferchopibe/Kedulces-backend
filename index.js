@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import pqrRouter from './controllers/pqrController.js';
+import pqrController from './pqrController.js'; // 👈 Importación directa desde la raíz de src/
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -53,8 +53,12 @@ app.get('/productos', obtenerProductos);
 // ==========================================
 // RUTAS CONECTADAS A MYSQL (PQR)
 // ==========================================
-app.use('/api/pqrs', pqrRouter);
-app.use('/pqrs', pqrRouter);
+const router = express.Router();
+router.get('/', pqrController.obtenerPqrs);
+router.post('/', pqrController.crearPqr);
+
+app.use('/api/pqrs', router);
+app.use('/pqrs', router);
 
 // ==========================================
 // ARRANQUE DEL SERVIDOR
