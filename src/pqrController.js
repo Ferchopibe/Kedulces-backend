@@ -1,5 +1,6 @@
 
 import nodemailer from 'nodemailer';
+import db from '../db.js';
 
 // Configuración de Nodemailer usando variables de entorno de Render
 const transporter = nodemailer.createTransport({
@@ -13,7 +14,6 @@ const transporter = nodemailer.createTransport({
 // 1. OBTENER PQRS (GET)
 export const obtenerPqrs = async (req, res) => {
   try {
-    const { default: db } = await import('../db.js');
     const [rows] = await db.query('SELECT * FROM pqrs ORDER BY id_pqr DESC');
     res.json(rows);
   } catch (error) {
@@ -25,7 +25,6 @@ export const obtenerPqrs = async (req, res) => {
 // 2. CREAR PQR (POST)
 export const crearPqr = async (req, res) => {
   try {
-    const { default: db } = await import('../db.js');
     const { id_pedido, pedidoId, nombre, correo, tipo_solicitud, motivo, descripcion } = req.body;
     const pedidoFinal = id_pedido || pedidoId || 1;
 
@@ -49,7 +48,7 @@ export const crearPqr = async (req, res) => {
     const idPqrGenerado = resultado.insertId;
     const radicado = `#PQR-${idPqrGenerado}`;
 
-    // Envío del correo electrónico de notificación
+    // Envío del correo electrónico de notificación vía Gmail/Nodemailer
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         await transporter.sendMail({
@@ -62,13 +61,14 @@ export const crearPqr = async (req, res) => {
               <p>Hemos recibido tu solicitud de PQR con éxito.</p>
               <p><strong>Número de Radicado:</strong> ${radicado}</p>
               <p><strong>Motivo:</strong> ${motivo}</p>
-              <p><strong>Detalle:</strong> ${descripcion}</p>
+              <p><strong>Detalle de la solicitud:</strong> ${descripcion}</p>
               <br>
+              <p>Nos pondremos en contacto contigo a la brevedad posible.</p>
               <p>Atentamente,<br><strong>Equipo de Postres y Dulces Ke'Dulces</strong></p>
             </div>
           `
         });
-        console.log('Correo enviado exitosamente');
+        console.log('Correo enviado con éxito');
       }
     } catch (mailError) {
       console.error('Error enviando e-mail Nodemailer:', mailError);
