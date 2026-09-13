@@ -1,6 +1,6 @@
 
 import nodemailer from 'nodemailer';
-import db from '../../db.js'; // Conexión apuntando a db.js en la raíz de kedulces-backend
+import db from '../db.js'; // Conexión a db.js ubicado en src/db.js
 
 // Configuración del transporte Nodemailer usando las variables de Render
 const transporter = nodemailer.createTransport({
@@ -49,7 +49,7 @@ export const crearPqr = async (req, res) => {
     const idPqrGenerado = resultado.insertId;
     const radicado = `#PQR-${idPqrGenerado}`;
 
-    // Envío del correo electrónico de notificación vía Gmail/Nodemailer
+    // Envío de correo electrónico de notificación vía Gmail/Nodemailer
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: correo,
