@@ -1,8 +1,8 @@
 
 import nodemailer from 'nodemailer';
-import db from '../db.js'; // Sube un nivel desde /controllers para encontrar db.js en la raíz
+import db from './db.js'; // Apunta a db.js ubicado en el mismo nivel dentro de src/
 
-// Configuración de Nodemailer usando variables de entorno de Render
+// Configuración de Nodemailer usando las variables de entorno de Render
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -48,7 +48,7 @@ export const crearPqr = async (req, res) => {
     const idPqrGenerado = resultado.insertId;
     const radicado = `#PQR-${idPqrGenerado}`;
 
-    // Envío del correo electrónico de notificación
+    // Envío del correo electrónico de notificación vía Gmail/Nodemailer
     try {
       if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
         await transporter.sendMail({
@@ -61,8 +61,9 @@ export const crearPqr = async (req, res) => {
               <p>Hemos recibido tu solicitud de PQR con éxito.</p>
               <p><strong>Número de Radicado:</strong> ${radicado}</p>
               <p><strong>Motivo:</strong> ${motivo}</p>
-              <p><strong>Detalle:</strong> ${descripcion}</p>
+              <p><strong>Detalle de la solicitud:</strong> ${descripcion}</p>
               <br>
+              <p>Nos pondremos en contacto contigo a la brevedad posible.</p>
               <p>Atentamente,<br><strong>Equipo de Postres y Dulces Ke'Dulces</strong></p>
             </div>
           `
